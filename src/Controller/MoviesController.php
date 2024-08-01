@@ -17,11 +17,19 @@ class MoviesController extends AbstractController
         $this->movieRepository = $movieRepository;
     }
 
-    #[Route('/movies', name: 'movies')]
+    #[Route('/movies', methods:['GET'], name: 'movies')]
     public function index(): Response
     {
         $movies = $this->movieRepository->findAll();
 
         return $this->render('movies/index.html.twig',['movies' => $movies]);
+    }
+
+    #[Route('/movies/{id}', methods:['GET'], name: 'movie')]
+    public function show($id): Response
+    {
+        $movie = $this->movieRepository->find($id);
+
+        return $this->render('movies/show.html.twig',['movie' => $movie]);
     }
 }
