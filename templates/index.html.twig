@@ -1,0 +1,9 @@
+{% extends "base.html.twig" %}
+
+{% block body %}
+
+    {%  for movie in movies %}
+        <li>{{ movie }}</li>
+    {% endfor %}
+
+{% endblock %}
