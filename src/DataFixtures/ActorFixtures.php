@@ -31,5 +31,11 @@ class ActorFixtures extends Fixture
         $manager->persist($actor4);
 
         $manager->flush();
+
+        $this->addReference('actor_1', $actor);
+        $this->addReference('actor_2', $actor1);
+        $this->addReference('actor_3', $actor2);
+        $this->addReference('actor_4', $actor3);
+        $this->addReference('actor_5', $actor4);
     }
 }
