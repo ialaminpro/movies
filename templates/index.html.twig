@@ -1,9 +1,8 @@
 {% extends "base.html.twig" %}
 
 {% block body %}
-
     {%  for movie in movies %}
-        <li>{{ movie }}</li>
+        <li class="bg-blue-500 text-2xl text-center font-bold">{{ movie.title }}</li>
     {% endfor %}
 
 {% endblock %}
