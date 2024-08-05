@@ -46,6 +46,7 @@ class MovieFormType extends AbstractType
                 ),
                 'label' => false,
                 'required' => false,
+                'mapped' => false,
             ])
             // ->add('actors')
         ;

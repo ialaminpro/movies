@@ -73,4 +73,62 @@ class MoviesController extends AbstractController
 
         return $this->render('movies/show.html.twig',['movie' => $movie]);
     }
+
+    #[Route('/movies/edit/{id}', name: 'edit_movie')]
+    public function edit($id, Request $request): Response
+    {
+        $movie = $this->movieRepository->find($id);
+        if (!$movie) {
+            throw $this->createNotFoundException('No movie found for id ' . $id);
+        }
+        $form = $this->createForm(MovieFormType::class, $movie);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $imagePath = $form->get('imagePath')->getData();
+            if ($imagePath) {
+                $oldImagePath = $this->getParameter('kernel.project_dir') . '/public' . $movie->getImagePath();
+                if ($movie->getImagePath() && file_exists($oldImagePath)) {
+
+                    if (is_writable($oldImagePath)) {
+                        unlink($oldImagePath);
+                    } else {
+                        return new Response('File is not writable: ' . $oldImagePath);
+                    }
+                }
+
+                $newFileName = uniqid() . '.' . $imagePath->guessExtension();
+                try {
+                    $imagePath->move(
+                        $this->getParameter('kernel.project_dir') . '/public/uploads',
+                        $newFileName
+                    );
+                    $movie->setImagePath('/uploads/' . $newFileName);
+                } catch (FileException $e) {
+                    return new Response($e->getMessage());
+                }
+            }
+
+            $movie->setTitle($form->get('title')->getData());
+            $movie->setReleaseYear($form->get('releaseYear')->getData());
+            $movie->setDescription($form->get('description')->getData());
+
+            $this->em->flush();
+
+            return $this->redirectToRoute('movies');
+        }
+        return $this->render('movies/edit.html.twig', [
+            'movie' => $movie,
+            'form' => $form->createView()
+        ]);
+    }
+
+    #[Route('/movies/delete/{id}', methods:['GET', 'DELETE'], name: 'delete_movies')]
+    public function delete($id): Response
+    {
+        $movie = $this->movieRepository->find($id);
+        $this->em->remove($movie);
+        $this->em->flush();
+        return $this->redirectToRoute('movies');
+    }
 }
