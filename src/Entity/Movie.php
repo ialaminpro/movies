@@ -6,6 +6,7 @@ use App\Repository\MovieRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: MovieRepository::class)]
 class Movie
@@ -16,16 +17,24 @@ class Movie
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    private ?string $title = null;
+    #[Assert\NotBlank]
+    #[Assert\Length(min: 3)]
+    private string $title;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $description = null;
 
-    #[ORM\Column]
-    private ?int $releaseYear = null;
+    #[ORM\Column(type: "integer")]
+    #[Assert\NotBlank]
+    #[Assert\Range(
+        min: 1888,
+        max: 2100,
+        notInRangeMessage: "Please enter a valid year between {{ min }} and {{ max }}."
+    )]
+    private int $releaseYear;
 
     #[ORM\Column(length: 255)]
-    private ?string $imagePath = null;
+    private string $imagePath;
 
     #[ORM\ManyToMany(targetEntity: Actor::class, inversedBy: 'movies')]
     private Collection $actors;

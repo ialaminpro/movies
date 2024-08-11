@@ -10,6 +10,8 @@ use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\File;
+use Symfony\Component\Validator\Constraints\NotBlank;
 
 class MovieFormType extends AbstractType
 {
@@ -44,11 +46,22 @@ class MovieFormType extends AbstractType
                 'attr' => array(
                     'class' => 'py-10',
                 ),
-                'label' => false,
+                'constraints' => [
+                    new NotBlank(['message' => 'Please upload an image']),
+                    new File([
+                        'maxSize' => '5M',
+                        'mimeTypes' => [
+                            'image/jpeg',
+                            'image/png',
+                        ],
+                        'mimeTypesMessage' => 'Please upload a valid image file (JPEG/PNG)',
+                    ])
+                ],
+                'label' => 'Movie Image (JPEG/PNG file)',
                 'required' => false,
                 'mapped' => false,
             ])
-            // ->add('actors')
+//             ->add('actors')
         ;
     }
 
