@@ -1,0 +1,21 @@
+{% extends "./base.html.twig" %}
+{% block body %}
+    <div class="w-4/5 m-auto pt-40">
+        <h1 class="text-6xl text-center pb-12">
+            Search Results
+        </h1>
+        {% if results is defined and results is not empty %}
+            <ul>
+                {% for result in results %}
+                    <li>
+                        <strong>{{ result.email }}</strong> - {{ result.email }}
+                        <a href="{{ path('user_detail', { id: result.id }) }}">View Details</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No results found for "{{ app.request.query.get('query') }}".</p>
+        {% endif %}
+    </div>
+
+{% endblock %}

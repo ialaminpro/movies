@@ -1,0 +1,18 @@
+fos_elastica:
+  clients:
+    default:
+      host: '%env(ELASTICSEARCH_HOST)%'
+      port: '%env(ELASTICSEARCH_PORT)%'
+  indexes:
+    app:
+      properties:
+        id:
+          type: integer
+        email:
+          type: text
+      persistence:
+        driver: orm
+        model: App\Entity\User
+        provider: ~
+        listener: ~
+        finder: ~
