@@ -3,13 +3,24 @@ fos_elastica:
     default:
       host: '%env(ELASTICSEARCH_HOST)%'
       port: '%env(ELASTICSEARCH_PORT)%'
+      # Optionally specify scheme, username, and password if needed
+      # scheme: 'https'
+      # username: '%env(ELASTICSEARCH_USERNAME)%'
+      # password: '%env(ELASTICSEARCH_PASSWORD)%'
+
   indexes:
     app:
+      settings:
+        index:
+          number_of_shards: 1
+          number_of_replicas: 1
       properties:
         id:
           type: integer
         email:
           type: text
+          index: true
+          analyzer: standard
       persistence:
         driver: orm
         model: App\Entity\User

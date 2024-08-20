@@ -22,9 +22,9 @@ class UserController extends AbstractController
      */
     public function list()
     {
-        $users = $this->userFinder->find([]);
-        return $this->render('user/index.html.twig', [
-            'results' => $users,
+        $results = $this->userFinder->find([]);
+        return $this->render('user/search.html.twig', [
+            'results' => $results,
         ]);
     }
 
