@@ -9,7 +9,7 @@ fos_elastica:
       # password: '%env(ELASTICSEARCH_PASSWORD)%'
 
   indexes:
-    app:
+    users:
       settings:
         index:
           number_of_shards: 1
@@ -24,6 +24,39 @@ fos_elastica:
       persistence:
         driver: orm
         model: App\Entity\User
+        provider: ~
+        listener: ~
+        finder: ~
+
+    movies:
+      settings:
+        index:
+          number_of_shards: 1
+          number_of_replicas: 1
+        analysis:
+          analyzer:
+            edge_ngram_analyzer:
+              type: custom
+              tokenizer: edge_ngram_tokenizer
+          tokenizer:
+            edge_ngram_tokenizer:
+              type: edge_ngram
+              min_gram: 2
+              max_gram: 20
+              token_chars: [ "letter", "digit" ]
+      properties:
+        id:
+          type: integer
+        title:
+          type: text
+          analyzer: standard
+          fields:
+            edge_ngram:
+              type: text
+              analyzer: edge_ngram_analyzer
+      persistence:
+        driver: orm
+        model: App\Entity\Movie
         provider: ~
         listener: ~
         finder: ~

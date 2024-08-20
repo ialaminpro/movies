@@ -20,9 +20,13 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
+    App\Controller\MoviesController:
+        arguments:
+            $movieFinder: '@fos_elastica.finder.movies'
 
-    FOS\ElasticaBundle\Finder\TransformedFinder:
-        alias: fos_elastica.finder.app
+    App\Controller\UserController:
+        arguments:
+            $userFinder: '@fos_elastica.finder.users'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

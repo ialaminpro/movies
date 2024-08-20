@@ -6,8 +6,13 @@ use App\Entity\Movie;
 use App\Form\MovieFormType;
 use App\Repository\MovieRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Elastica\Query\MatchQuery;
+use Elastica\Suggest;
+use Elastica\Suggest\Completion;
+use FOS\ElasticaBundle\Finder\TransformedFinder;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -15,11 +20,13 @@ use Symfony\Component\Routing\Annotation\Route;
 class MoviesController extends AbstractController
 {
     private $em;
+    private $movieFinder;
     private $movieRepository;
-    public function __construct(MovieRepository $movieRepository, EntityManagerInterface $em)
+    public function __construct(TransformedFinder $movieFinder, MovieRepository $movieRepository, EntityManagerInterface $em)
     {
         $this->movieRepository = $movieRepository;
         $this->em = $em;
+        $this->movieFinder = $movieFinder;
     }
 
     #[Route('/movies', methods:['GET'], name: 'movies')]
@@ -28,6 +35,25 @@ class MoviesController extends AbstractController
         $movies = $this->movieRepository->findAll();
 
         return $this->render('movies/index.html.twig',['movies' => $movies]);
+    }
+
+    #[Route('/movies/search', methods:['GET'], name: 'movie_search')]
+    public function search(Request $request): JsonResponse
+    {
+        $q = $request->query->get('q', '');
+
+        $suggest = new Suggest();
+        $completion = new Completion('movie_suggest', 'title.edge_ngram');
+        $completion->setText($q);
+        $suggest->addSuggestion($completion);
+
+        $results = $this->movieFinder->find($q);
+
+        return new JsonResponse([
+            'suggestions' => array_map(function($item) {
+                return ['title' => $item->getTitle()];
+            }, $results),
+        ]);
     }
 
     #[Route('/movies/create', name: 'create_movie')]

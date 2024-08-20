@@ -13,6 +13,7 @@
         </div>
     </div>
 
+
     {% if app.user %}
     <div class="mx-auto w-4/5 my-8">
         <a
@@ -22,8 +23,15 @@
         </a>
     </div>
     {% endif %}
+    <div class="text-center pt-8 pb-4">
+        <form id="search-form">
+            <input type="text" id="search-input" placeholder="Search..." />
+            <div id="suggestions"></div>
+        </form>
+    </div>
 
     <div class="md:grid lg:grid-cols-3 gap-20 w-4/5 mx-auto py-15 ">
+
         <!-- Review Item -->
         {% for movie in movies %}
             <div class="text-center pt-8 pb-4">
@@ -51,4 +59,23 @@
             </div>
         {% endfor %}
     </div>
+
+    <script>
+        document.getElementById('search-input').addEventListener('input', function() {
+            const query = this.value;
+            fetch(`/movies/search?q=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.suggestions && Array.isArray(data.suggestions)) {
+                        const suggestions = data.suggestions.map(item => `<div>${item.title}</div>`).join('');
+                        document.getElementById('suggestions').innerHTML = suggestions;
+                    } else {
+                        console.error('Expected an array of suggestions but received:', data.suggestions);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                });
+        });
+    </script>
 {% endblock %}
