@@ -18,6 +18,15 @@
             Create New User
         </a>
     </div>
+
+    <div class="mx-auto w-4/5 text-center">
+        <form id="search-form">
+            <input class="border border-gray-500 text-lg py-2 px-2" type="text" id="search-input"
+                   placeholder="Search..."/>
+            <div id="suggestions"></div>
+        </form>
+    </div>
+
     <div class="md:grid lg:grid-cols-3 gap-20 w-4/5 mx-auto py-15 ">
 
         <!-- Review Item -->
@@ -30,20 +39,38 @@
                 />
 
                 <h2 class="text-gray-700 font-bold text-3xl py-2">
-                    {{ user.firstName }} {{ user.firstName }}
+                    {{ user.firstName }} {{ user.lastName }}
                 </h2>
 
-    <p class="text-base text-gray-700 pt-4 pb-10 leading-8 font-light">
-        {{ user.email }}
-    </p>
+                <p class="text-base text-gray-700 pt-4 pb-10 leading-8 font-light">
+                    {{ user.email }}
+                </p>
 
-    <a href="{{ path('user_index', {
-        'id': user.id
-    }) }}" class="uppercase border border-gray-500 text-gray-600 text-lg py-4 px-12 rounded transition transition-all hover:bg-gray-800 hover:text-white">
-        Details
-    </a>
+                <a href="{{ path('user_index', {
+                    'id': user.id
+                }) }}"
+                   class="uppercase border border-gray-500 text-gray-600 text-lg py-4 px-12 rounded transition transition-all hover:bg-gray-800 hover:text-white">
+                    Details
+                </a>
             </div>
         {% endfor %}
     </div>
-
+    <script>
+        document.getElementById('search-input').addEventListener('input', function() {
+            const query = this.value;
+            fetch(`/users/search/suggest?q=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.suggestions && Array.isArray(data.suggestions)) {
+                        const suggestions = data.suggestions.map(item => `<div>${item.firstName}</div>`).join('');
+                        document.getElementById('suggestions').innerHTML = suggestions;
+                    } else {
+                        console.error('Expected an array of suggestions but received:', data.suggestions);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                });
+        });
+    </script>
 {% endblock %}
