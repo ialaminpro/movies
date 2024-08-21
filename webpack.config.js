@@ -22,9 +22,6 @@ Encore
      */
     .addEntry('app', './assets/app.js')
 
-    // enables the Symfony UX Stimulus bridge (used in assets/bootstrap.js)
-    .enableStimulusBridge('./assets/controllers.json')
-
     // When enabled, Webpack "splits" your files into smaller pieces for greater optimization.
     .splitEntryChunks()
 
@@ -71,17 +68,6 @@ Encore
 
     // uncomment if you're having problems with a jQuery plugin
     //.autoProvidejQuery()
-    .enablePostCssLoader((options) => {
-        // new option outlined here https://webpack.js.org/loaders/postcss-loader/
-        options.postcssOptions = {
-            config: './postcss.config.js',
-        }
-    })
-    .copyFiles({
-        from:'./assets/images',
-        to: 'images/[path][name].[hash:8].[ext]',
-        pattern: /\.(png|jpg|jpeg)$/
-    })
 ;
 
 module.exports = Encore.getWebpackConfig();

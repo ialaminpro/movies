@@ -4,6 +4,9 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    mongodb_server: "mongodb://localhost:27017"
+#    mongodb_server: "mongodb://username:password@localhost:27017/?authSource=auth-db"
+
 
 services:
     # default configuration for services in *this* file
@@ -26,7 +29,9 @@ services:
 
     App\Controller\UserController:
         arguments:
-            $userFinder: '@fos_elastica.finder.users'
+            $_userFinder: '@fos_elastica.finder.users'
+
+
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
