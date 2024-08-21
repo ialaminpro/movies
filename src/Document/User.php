@@ -35,16 +35,19 @@ class User
     private $id;
 
     #[ODM\Field(type: Type::STRING)]
-    private string $firstName;
+    private string $firstName = "";
 
     #[ODM\Field(type: Type::STRING)]
-    private string $lastName;
+    private string $lastName = "";
 
     #[ODM\Field(type: Type::STRING)]
-    private string $email;
+    private string $email = "";
 
     #[ODM\Field(type: Type::STRING)]
-    private string $password;
+    private string $password = "";
+
+    #[ODM\Field(type: Type::STRING)]
+    private string $imagePath = "";
 
     #[ODM\Field(type: Type::DATE_IMMUTABLE)]
     private DateTimeImmutable $createdDate;
@@ -99,6 +102,16 @@ class User
     public function setEmail(string $email): void
     {
         $this->email = $email;
+    }
+
+    public function getImagePath(): string
+    {
+        return $this->imagePath;
+    }
+
+    public function setImagePath(string $imagePath): void
+    {
+        $this->imagePath = $imagePath;
     }
 
     public function getPassword(): string

@@ -42,6 +42,16 @@ class UserController extends AbstractController
         $this->_logger = $_logger;
     }
 
+    // Index action to display all the users
+    #[Route('/users', name: 'user_index', methods: ['GET'])]
+    public function index(Request $request): Response
+    {
+        // Fetch all the users
+        $users = $this->_documentManager->getRepository(User::class)->findAll();
+
+        return $this->render('user/index.html.twig', ['users' => $users]);
+    }
+
     /**
      * Create action to create a new user
      *
@@ -66,7 +76,7 @@ class UserController extends AbstractController
             $this->_documentManager->persist($user);
             $this->_documentManager->flush();
 
-            return $this->redirectToRoute('app_home_index');
+            return $this->redirectToRoute('user_index');
         }
 
         // Render the create rental page

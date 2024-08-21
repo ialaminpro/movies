@@ -1,20 +1,49 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello UserController!{% endblock %}
+{% block title %}User List{% endblock %}
 
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
+    <div class="w-4/5 m-auto text-center">
+        <div class="py-12 border-b border-gray-200">
+            <h1 class="text-6xl pt-12 pb-8">
+                User List ({{ users|length }})
+            </h1>
+        </div>
+    </div>
 
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
+    <div class="mx-auto w-4/5 my-8">
+        <a
+                href="/users/create"
+                class="uppercase border border-gray-500 text-lg py-4 px-6 rounded transition transition-all bg-gray-800 text-white hover:bg-white hover:text-gray-800">
+            Create New User
+        </a>
+    </div>
+    <div class="md:grid lg:grid-cols-3 gap-20 w-4/5 mx-auto py-15 ">
 
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code><a href="{{ '/Users/alamin/Workspace/movies/src/Controller/UserController.php'|file_link(0) }}">src/Controller/UserController.php</a></code></li>
-        <li>Your template at <code><a href="{{ '/Users/alamin/Workspace/movies/templates/user/index.html.twig'|file_link(0) }}">templates/user/index.html.twig</a></code></li>
-    </ul>
-</div>
+        <!-- Review Item -->
+        {% for user in users %}
+            <div class="text-center pt-8 pb-4">
+                <img
+                        src="{{ user.imagePath }}"
+                        alt=""
+                        class="shadow-xl rounded-md"
+                />
+
+                <h2 class="text-gray-700 font-bold text-3xl py-2">
+                    {{ user.firstName }} {{ user.firstName }}
+                </h2>
+
+    <p class="text-base text-gray-700 pt-4 pb-10 leading-8 font-light">
+        {{ user.email }}
+    </p>
+
+    <a href="{{ path('user_index', {
+        'id': user.id
+    }) }}" class="uppercase border border-gray-500 text-gray-600 text-lg py-4 px-12 rounded transition transition-all hover:bg-gray-800 hover:text-white">
+        Details
+    </a>
+            </div>
+        {% endfor %}
+    </div>
+
 {% endblock %}
