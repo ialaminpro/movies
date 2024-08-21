@@ -9,14 +9,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.3.5/dist/alpine.min.js" defer></script>
 </head>
-<body class="bg-gray-100 h-screen antialiased leading-none font-sans">
+<body class="grid grid-rows-[1fr_auto] min-h-screen">
 {% block header %}
     <header>
         <nav
                 class="flex items-center justify-between flex-wrap p-6 fixed w-full z-10 top-0"
                 x-data="{ isOpen: false }"
                 @keydown.escape="isOpen = false"
-                :class="{ 'shadow-lg bg-gray-600' : isOpen , 'bg-gray-600' : !isOpen}">
+                :class="{ 'shadow-lg bg-gray-600' : isOpen , 'bg-gray-800' : !isOpen}">
 
             <div class="flex items-center flex-shrink-0 text-white mr-6">
                 <a
@@ -104,7 +104,7 @@
 {% block body %}{% endblock %}
 
 {% block footer %}
-    <footer class="bg-gray-600 py-6 mt-20">
+    <footer class="bg-gray-800 text-white text-center p-4 mt-5">
         <p class="w-25 w-4/5 text-center pb-3 m-auto text-base text-gray-100 pt-6">
             Copyright 2024 Al Amin. All Rights Reserved
         </p>

@@ -6,7 +6,6 @@ use App\Entity\Movie;
 use App\Form\MovieFormType;
 use App\Repository\MovieRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Elastica\Query\MatchQuery;
 use Elastica\Suggest;
 use Elastica\Suggest\Completion;
 use FOS\ElasticaBundle\Finder\TransformedFinder;
