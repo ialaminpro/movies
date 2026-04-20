@@ -1,38 +1,37 @@
 {
+    "name": "ialaminpro/movies",
+    "description": "Production-style Symfony movie catalogue with secure CRUD and Elasticsearch search.",
     "type": "project",
     "license": "proprietary",
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
-        "php": ">=8.1.0",
+        "php": "^8.2",
         "ext-ctype": "*",
         "ext-iconv": "*",
-        "doctrine/annotations": "*",
-        "doctrine/cache": "*",
-        "doctrine/dbal": "^3",
-        "doctrine/doctrine-bundle": "^2.7",
-        "doctrine/doctrine-migrations-bundle": "^3.3",
-        "doctrine/mongodb-odm-bundle": "^5.0",
-        "doctrine/orm": "^2.10",
-        "friendsofsymfony/elastica-bundle": "*",
-        "laminas/laminas-code": "^4.14",
-        "mongodb/mongodb": "^1.19",
-        "predis/predis": "*",
-        "symfony/asset": "7.1.*",
-        "symfony/console": "^7.1",
-        "symfony/dotenv": "^7.1",
-        "symfony/flex": "^2.4",
-        "symfony/form": "7.1.*",
-        "symfony/framework-bundle": "^7.1",
-        "symfony/mime": "^7.1",
-        "symfony/runtime": "^7.1",
-        "symfony/security-bundle": "^7.1",
-        "symfony/twig-bundle": "7.1.*",
-        "symfony/validator": "^7.1",
+        "doctrine/dbal": "^4.2",
+        "doctrine/doctrine-bundle": "^2.13",
+        "doctrine/doctrine-migrations-bundle": "^3.4",
+        "doctrine/orm": "^3.3",
+        "friendsofsymfony/elastica-bundle": "^7.2",
+        "symfony/asset": "7.4.*",
+        "symfony/console": "7.4.*",
+        "symfony/dotenv": "7.4.*",
+        "symfony/flex": "^2.8",
+        "symfony/form": "7.4.*",
+        "symfony/framework-bundle": "7.4.*",
+        "symfony/mime": "7.4.*",
+        "symfony/monolog-bundle": "^3.10",
+        "symfony/runtime": "7.4.*",
+        "symfony/security-bundle": "7.4.*",
+        "symfony/security-csrf": "7.4.*",
+        "symfony/twig-bundle": "7.4.*",
+        "symfony/uid": "7.4.*",
+        "symfony/validator": "7.4.*",
         "symfony/webpack-encore-bundle": "^2.1",
-        "symfony/yaml": "^7.1",
-        "twig/extra-bundle": "^2.12|^3.0",
-        "twig/twig": "^2.12|^3.0"
+        "symfony/yaml": "7.4.*",
+        "twig/extra-bundle": "^3.21",
+        "twig/twig": "^3.21"
     },
     "config": {
         "allow-plugins": {
@@ -59,9 +58,6 @@
     "replace": {
         "symfony/polyfill-ctype": "*",
         "symfony/polyfill-iconv": "*",
-        "symfony/polyfill-php72": "*",
-        "symfony/polyfill-php73": "*",
-        "symfony/polyfill-php74": "*",
         "symfony/polyfill-php80": "*"
     },
     "scripts": {
@@ -74,6 +70,15 @@
         ],
         "post-update-cmd": [
             "@auto-scripts"
+        ],
+        "test": "php bin/phpunit",
+        "analyse": "phpstan analyse --memory-limit=1G",
+        "format": "php-cs-fixer fix --sequential",
+        "format:test": "php-cs-fixer fix --dry-run --diff --sequential",
+        "check": [
+            "@format:test",
+            "@analyse",
+            "@test"
         ]
     },
     "conflict": {
@@ -82,11 +87,18 @@
     "extra": {
         "symfony": {
             "allow-contrib": "true",
-            "require": "7.1.*"
+            "require": "7.4.*"
         }
     },
     "require-dev": {
-        "doctrine/doctrine-fixtures-bundle": "^3.6",
-        "symfony/maker-bundle": "^1.50"
+        "doctrine/doctrine-fixtures-bundle": "^4.0",
+        "friendsofphp/php-cs-fixer": "^3.86",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-doctrine": "^2.0",
+        "phpstan/phpstan-symfony": "^2.0",
+        "phpunit/phpunit": "^11.5",
+        "symfony/browser-kit": "7.4.*",
+        "symfony/css-selector": "7.4.*",
+        "symfony/maker-bundle": "^1.64"
     }
 }
