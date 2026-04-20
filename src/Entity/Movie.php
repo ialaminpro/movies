@@ -7,9 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
-use FOS\ElasticaBundle\Configuration\ElasticaIndex;
 
-#[ElasticaIndex(name: "movies")]
 #[ORM\Entity(repositoryClass: MovieRepository::class)]
 class Movie
 {
@@ -21,23 +19,24 @@ class Movie
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
     #[Assert\Length(min: 3)]
-    private string $title;
+    private string $title = '';
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
 
-    #[ORM\Column(type: "integer")]
+    #[ORM\Column(type: 'integer')]
     #[Assert\NotBlank]
     #[Assert\Range(
         min: 1888,
         max: 2100,
-        notInRangeMessage: "Please enter a valid year between {{ min }} and {{ max }}."
+        notInRangeMessage: 'Please enter a valid year between {{ min }} and {{ max }}.'
     )]
-    private int $releaseYear;
+    private int $releaseYear = 1888;
 
-    #[ORM\Column(length: 255)]
-    private string $imagePath;
+    #[ORM\Column(length: 500)]
+    private string $imagePath = '';
 
+    /** @var Collection<int, Actor> */
     #[ORM\ManyToMany(targetEntity: Actor::class, inversedBy: 'movies')]
     private Collection $actors;
 
@@ -51,7 +50,7 @@ class Movie
         return $this->id;
     }
 
-    public function getTitle(): ?string
+    public function getTitle(): string
     {
         return $this->title;
     }
@@ -75,7 +74,7 @@ class Movie
         return $this;
     }
 
-    public function getReleaseYear(): ?int
+    public function getReleaseYear(): int
     {
         return $this->releaseYear;
     }
@@ -87,7 +86,7 @@ class Movie
         return $this;
     }
 
-    public function getImagePath(): ?string
+    public function getImagePath(): string
     {
         return $this->imagePath;
     }
