@@ -20,17 +20,15 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
-    App\Controller\MoviesController:
+    App\Search\MovieSearch: '@App\Search\ElasticsearchMovieSearch'
+
+    App\Search\ElasticsearchMovieSearch:
         arguments:
-            $movieFinder: '@fos_elastica.finder.movies'
+            $finder: '@fos_elastica.finder.movies'
 
-    App\Controller\UserController:
+    App\Storage\MovieImageStorage:
         arguments:
-            $_userFinder: '@fos_elastica.finder.users'
-
-
-
-
+            $uploadDirectory: '%kernel.project_dir%/public/uploads'
 
         # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

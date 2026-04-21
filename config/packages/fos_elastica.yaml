@@ -1,56 +1,9 @@
 fos_elastica:
   clients:
     default:
-      host: '%env(ELASTICSEARCH_HOST)%'
-      port: '%env(ELASTICSEARCH_PORT)%'
-      # Optionally specify scheme, username, and password if needed
-      # scheme: 'https'
-      # username: '%env(ELASTICSEARCH_USERNAME)%'
-      # password: '%env(ELASTICSEARCH_PASSWORD)%'
+      hosts: ['%env(ELASTICSEARCH_URL)%']
 
   indexes:
-    users:
-      settings:
-        index:
-          number_of_shards: 1
-          number_of_replicas: 1
-        analysis:
-          analyzer:
-            edge_ngram_analyzer:
-              type: custom
-              tokenizer: edge_ngram_tokenizer
-          tokenizer:
-            edge_ngram_tokenizer:
-              type: edge_ngram
-              min_gram: 2
-              max_gram: 20
-              token_chars: [ "letter", "digit" ]
-      properties:
-        id:
-          type: text
-        firstName:
-          type: text
-          analyzer: standard
-          fields:
-            suggest:
-              type: completion
-            edge_ngram:
-              type: completion
-              analyzer: edge_ngram_analyzer
-        lastName:
-          type: text
-          analyzer: standard
-          fields:
-            edge_ngram:
-              type: text
-              analyzer: edge_ngram_analyzer
-      persistence:
-        driver: mongodb
-        model: App\Document\User
-        provider: ~
-        listener: ~
-        finder: ~
-
     movies:
       settings:
         index:
@@ -83,3 +36,11 @@ fos_elastica:
         provider: ~
         listener: ~
         finder: ~
+
+when@test:
+  fos_elastica:
+    indexes:
+      movies:
+        persistence:
+          listener:
+            enabled: false
