@@ -1,161 +1,158 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use App\Entity\Movie;
 use App\Form\MovieFormType;
 use App\Repository\MovieRepository;
+use App\Search\MovieSearch;
+use App\Search\SearchUnavailable;
+use App\Storage\MovieImageStorage;
+use App\Storage\StorageException;
 use Doctrine\ORM\EntityManagerInterface;
-use Elastica\Suggest;
-use Elastica\Suggest\Completion;
-use FOS\ElasticaBundle\Finder\TransformedFinder;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\Form\FormError;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-class MoviesController extends AbstractController
+#[Route('/movies')]
+final class MoviesController extends AbstractController
 {
-    private $em;
-    private $movieFinder;
-    private $movieRepository;
-    public function __construct(TransformedFinder $movieFinder, MovieRepository $movieRepository, EntityManagerInterface $em)
-    {
-        $this->movieRepository = $movieRepository;
-        $this->em = $em;
-        $this->movieFinder = $movieFinder;
+    public function __construct(
+        private readonly MovieRepository $movieRepository,
+        private readonly EntityManagerInterface $entityManager,
+        private readonly MovieSearch $movieSearch,
+        private readonly MovieImageStorage $imageStorage,
+        private readonly LoggerInterface $logger,
+    ) {
     }
 
-    #[Route('/movies', methods:['GET'], name: 'movies')]
+    #[Route('', name: 'movies', methods: ['GET'])]
     public function index(): Response
     {
-        $movies = $this->movieRepository->findAll();
-
-        return $this->render('movies/index.html.twig',['movies' => $movies]);
-    }
-
-    #[Route('/movies/search', methods:['GET'], name: 'movie_search')]
-    public function search(Request $request): JsonResponse
-    {
-        $q = $request->query->get('q', '');
-
-        $suggest = new Suggest();
-        $completion = new Completion('movie_suggest', 'title.edge_ngram');
-        $completion->setText($q);
-        $suggest->addSuggestion($completion);
-
-        $results = $this->movieFinder->find($q);
-
-        return new JsonResponse([
-            'suggestions' => array_map(function($item) {
-                return ['title' => $item->getTitle()];
-            }, $results),
+        return $this->render('movies/index.html.twig', [
+            'movies' => $this->movieRepository->findBy([], ['title' => 'ASC']),
         ]);
     }
 
-    #[Route('/movies/create', name: 'create_movie')]
+    #[Route('/search', name: 'movie_search', methods: ['GET'])]
+    public function search(Request $request): JsonResponse
+    {
+        $query = trim((string) $request->query->get('q', ''));
+
+        try {
+            $results = $this->movieSearch->search($query, 10);
+        } catch (SearchUnavailable $exception) {
+            $this->logger->warning('Movie search is unavailable.', ['exception' => $exception]);
+
+            return $this->json(['error' => 'Search is temporarily unavailable.'], Response::HTTP_SERVICE_UNAVAILABLE);
+        }
+
+        return $this->json([
+            'suggestions' => array_map(
+                static fn ($result): array => ['id' => $result->id, 'title' => $result->title],
+                $results,
+            ),
+        ]);
+    }
+
+    #[Route('/create', name: 'create_movie', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_ADMIN')]
     public function create(Request $request): Response
     {
         $movie = new Movie();
-        $form = $this->createForm(MovieFormType::class, $movie);
-
+        $form = $this->createForm(MovieFormType::class, $movie, ['image_required' => true]);
         $form->handleRequest($request);
-        if($form->isSubmitted() && $form->isValid()){
-            $newMovie = $form->getData();
-            $imagePath = $form->get('imagePath')->getData();
 
-            if ($imagePath){
-                $newFileName = uniqid().'.'.$imagePath->guessExtension();
+        if ($form->isSubmitted() && $form->isValid()) {
+            $image = $form->get('image')->getData();
 
+            if ($image instanceof UploadedFile) {
                 try {
-                    $imagePath->move(
-                        $this->getParameter('kernel.project_dir') . '/public/uploads',
-                        $newFileName
-                    );
-                }catch (FileException $e){
-                    return new Response($e->getMessage());
+                    $movie->setImagePath($this->imageStorage->upload($image));
+                    $this->entityManager->persist($movie);
+                    $this->entityManager->flush();
+
+                    $this->addFlash('success', 'Movie created.');
+
+                    return $this->redirectToRoute('show_movie', ['id' => $movie->getId()]);
+                } catch (StorageException) {
+                    $form->get('image')->addError(new FormError('The image could not be stored. Please try again.'));
                 }
-
-                $newMovie->setImagePath('/uploads/' . $newFileName);
             }
-
-            $this->em->persist($newMovie);
-            $this->em->flush();
-
-            return $this->redirectToRoute('movies');
-
         }
 
-        return $this->render('movies/create.html.twig', [
-            'form' => $form->createView()
-        ]);
+        return $this->render(
+            'movies/create.html.twig',
+            ['form' => $form],
+            new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK),
+        );
     }
 
-    #[Route('/movies/{id}', methods:['GET'], name: 'show_movie')]
-    public function show($id): Response
+    #[Route('/{id}', name: 'show_movie', requirements: ['id' => '\\d+'], methods: ['GET'])]
+    public function show(Movie $movie): Response
     {
-        $movie = $this->movieRepository->find($id);
-
-        return $this->render('movies/show.html.twig',['movie' => $movie]);
+        return $this->render('movies/show.html.twig', ['movie' => $movie]);
     }
 
-    #[Route('/movies/edit/{id}', name: 'edit_movie')]
-    public function edit($id, Request $request): Response
+    #[Route('/{id}/edit', name: 'edit_movie', requirements: ['id' => '\\d+'], methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function edit(Movie $movie, Request $request): Response
     {
-        $movie = $this->movieRepository->find($id);
-        if (!$movie) {
-            throw $this->createNotFoundException('No movie found for id ' . $id);
-        }
+        $oldImagePath = $movie->getImagePath();
         $form = $this->createForm(MovieFormType::class, $movie);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $imagePath = $form->get('imagePath')->getData();
-            if ($imagePath) {
-                $oldImagePath = $this->getParameter('kernel.project_dir') . '/public' . $movie->getImagePath();
-                if ($movie->getImagePath() && file_exists($oldImagePath)) {
+            $image = $form->get('image')->getData();
 
-                    if (is_writable($oldImagePath)) {
-                        unlink($oldImagePath);
-                    } else {
-                        return new Response('File is not writable: ' . $oldImagePath);
-                    }
+            try {
+                if ($image instanceof UploadedFile) {
+                    $movie->setImagePath($this->imageStorage->upload($image));
                 }
 
-                $newFileName = uniqid() . '.' . $imagePath->guessExtension();
-                try {
-                    $imagePath->move(
-                        $this->getParameter('kernel.project_dir') . '/public/uploads',
-                        $newFileName
-                    );
-                    $movie->setImagePath('/uploads/' . $newFileName);
-                } catch (FileException $e) {
-                    return new Response($e->getMessage());
+                $this->entityManager->flush();
+
+                if ($image instanceof UploadedFile) {
+                    $this->imageStorage->delete($oldImagePath);
                 }
+
+                $this->addFlash('success', 'Movie updated.');
+
+                return $this->redirectToRoute('show_movie', ['id' => $movie->getId()]);
+            } catch (StorageException) {
+                $form->get('image')->addError(new FormError('The image could not be stored. Please try again.'));
             }
-
-            $movie->setTitle($form->get('title')->getData());
-            $movie->setReleaseYear($form->get('releaseYear')->getData());
-            $movie->setDescription($form->get('description')->getData());
-
-            $this->em->flush();
-
-            return $this->redirectToRoute('movies');
         }
-        return $this->render('movies/edit.html.twig', [
-            'movie' => $movie,
-            'form' => $form->createView()
-        ]);
+
+        return $this->render(
+            'movies/edit.html.twig',
+            ['movie' => $movie, 'form' => $form],
+            new Response(status: $form->isSubmitted() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK),
+        );
     }
 
-    #[Route('/movies/delete/{id}', methods:['GET', 'DELETE'], name: 'delete_movies')]
-    public function delete($id): Response
+    #[Route('/{id}', name: 'delete_movie', requirements: ['id' => '\\d+'], methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function delete(Movie $movie, Request $request): Response
     {
-        $movie = $this->movieRepository->find($id);
-        $this->em->remove($movie);
-        $this->em->flush();
+        if (!$this->isCsrfTokenValid('delete'.$movie->getId(), (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Invalid CSRF token.');
+        }
+
+        $imagePath = $movie->getImagePath();
+        $this->entityManager->remove($movie);
+        $this->entityManager->flush();
+        $this->imageStorage->delete($imagePath);
+        $this->addFlash('success', 'Movie deleted.');
+
         return $this->redirectToRoute('movies');
     }
 }
