@@ -11,57 +11,57 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\File;
-use Symfony\Component\Validator\Constraints\NotBlank;
 
+/** @extends AbstractType<Movie> */
 class MovieFormType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
             ->add('title', TextType::class, [
-                'attr' => array(
+                'attr' => [
                     'class' => 'bg-transparent block border-b-2 w-full h-20 text-6xl outline-none',
                     'placeholder' => 'Enter title...',
-                ),
+                ],
                 'label' => false,
-                'required' => false
+                'required' => true,
+                'empty_data' => '',
             ])
             ->add('releaseYear', IntegerType::class, [
-                'attr' => array(
+                'attr' => [
                     'class' => 'bg-transparent block mt-10 border-b-2 w-full h-20 text-6xl outline-none',
-                    'placeholder' => 'Enter Release Year...'
-                ),
+                    'placeholder' => 'Enter Release Year...',
+                ],
                 'label' => false,
-                'required' => false
+                'required' => true,
             ])
             ->add('description', TextareaType::class, [
-                'attr' => array(
+                'attr' => [
                     'class' => 'bg-transparent block mt-10 border-b-2 w-full h-60 text-6xl outline-none',
-                    'placeholder' => 'Enter Description...'
-                ),
+                    'placeholder' => 'Enter Description...',
+                ],
                 'label' => false,
                 'required' => false,
             ])
-            ->add('imagePath', FileType::class, [
-                'attr' => array(
+            ->add('image', FileType::class, [
+                'attr' => [
                     'class' => 'py-10',
-                ),
+                ],
                 'constraints' => [
-                    new NotBlank(['message' => 'Please upload an image']),
-                    new File([
-                        'maxSize' => '5M',
-                        'mimeTypes' => [
+                    new File(
+                        maxSize: '5M',
+                        mimeTypes: [
                             'image/jpeg',
                             'image/png',
+                            'image/webp',
                         ],
-                        'mimeTypesMessage' => 'Please upload a valid image file (JPEG/PNG)',
-                    ])
+                        mimeTypesMessage: 'Please upload a valid JPEG, PNG, or WebP image.',
+                    ),
                 ],
-                'label' => 'Movie Image (JPEG/PNG file)',
-                'required' => false,
+                'label' => 'Movie image (JPEG, PNG, or WebP)',
+                'required' => $options['image_required'],
                 'mapped' => false,
             ])
-//             ->add('actors')
         ;
     }
 
@@ -69,6 +69,8 @@ class MovieFormType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Movie::class,
+            'image_required' => false,
         ]);
+        $resolver->setAllowedTypes('image_required', 'bool');
     }
 }
