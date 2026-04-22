@@ -1,0 +1,12 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\Search\MovieSearch:
+        alias: App\Search\ElasticsearchMovieSearch
+        public: true
+
+    App\Storage\MovieImageStorage:
+        arguments:
+            $uploadDirectory: '%kernel.cache_dir%/uploads'
