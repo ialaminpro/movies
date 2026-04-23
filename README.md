@@ -1,112 +1,150 @@
-# Movies Project
+# Movies
 
-This project is a web application for managing a movie database, developed using the Symfony framework. It integrates MongoDB, MySQL, and Elasticsearch to provide robust data management and search capabilities.
+A production-style Symfony portfolio application for managing and searching a movie catalogue. The project focuses on secure CRUD workflows, explicit infrastructure responsibilities, testable boundaries, and a reproducible development environment.
 
 ## Features
 
-- **Movie Management**: Add, update, delete, and view movies in the database.
-- **Advanced Search**: Utilize Elasticsearch for advanced movie searching capabilities.
-- **Data Storage**: Leverages both MongoDB and MySQL for different aspects of data storage and retrieval.
+- Public movie listing, details, and Elasticsearch-backed suggestions
+- ORM-backed registration and login with modern password hashing
+- Admin-only movie creation, editing, and deletion
+- CSRF-protected state changes and validated image uploads
+- Deterministic demo users, movies, actors, and relationships
+- Unit and functional tests that run without external services
+- PHPStan level 8, PHP CS Fixer, Composer/npm audits, and GitHub Actions CI
 
-## Technologies Used
+## Architecture
 
-- **Symfony**: PHP framework used for building the web application.
-- **MongoDB**: NoSQL database used for storing certain types of data, like movie metadata.
-- **MySQL**: Relational database used for storing structured data.
-- **Elasticsearch**: Search engine used for implementing advanced search functionality.
-
-## Project Structure
-
-```plaintext
-movies-project/
-├── config/               # Configuration files for Symfony
-├── src/                  # Source code of the application
-│   ├── Controller/       # Symfony controllers
-│   ├── Entity/           # Doctrine entities (MySQL)
-│   ├── Document/         # MongoDB documents
-│   ├── Repository/       # Repositories for database interactions
-│   ├── Service/          # Business logic and services
-│   └── Command/          # Symfony commands
-├── templates/            # Twig templates for views
-├── public/               # Publicly accessible files (e.g., index.php)
-├── migrations/           # Database migrations
-├── tests/                # Automated tests
-├── var/                  # Symfony-generated files (cache, logs, etc.)
-├── vendor/               # Composer dependencies
-└── composer.json         # Composer configuration file
+```text
+Browser
+   │
+   ▼
+Symfony controllers ─────────────── Twig
+   │
+   ├── Doctrine repositories ───── MySQL 8.4
+   │                                source of truth
+   │
+   ├── MovieImageStorage ───────── local public uploads
+   │
+   └── MovieSearch interface ───── Elasticsearch 9
+                                    derived search index
 ```
 
-## Installation
+Controllers handle HTTP concerns, forms, and authorization. Doctrine entities and repositories own canonical transactional data. `MovieImageStorage` contains filesystem behavior. `MovieSearch` prevents Elastica types and failures from leaking through the application.
 
-### Prerequisites
+## Technology choices
 
-- PHP 8.0 or higher
-- Composer
-- Symfony CLI (optional but recommended)
-- MongoDB
-- MySQL
-- Elasticsearch
+- **PHP 8.2 and Symfony 7.4 LTS** provide a maintained runtime through November 2029.
+- **Doctrine ORM and MySQL** own users, movies, actors, and relationships.
+- **Elasticsearch** is a rebuildable read model used only for movie search.
+- **Twig, Webpack Encore, and Tailwind CSS** provide a server-rendered frontend with a reproducible local build.
+- **Docker Compose** runs only infrastructure: MySQL and Elasticsearch.
 
-### Steps
+## Engineering decisions
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/ialaminpro/movies.git
-   cd movies
-   ```
+- **One source of truth:** MySQL owns all business data. Elasticsearch can be dropped and rebuilt with `fos:elastica:populate`.
+- **MongoDB removed:** the former MongoDB user document duplicated ORM user data, included another password store, and had no document-specific workload.
+- **Redis removed:** no cache, session, queue, or rate-limiting feature used it.
+- **Role-based authorization:** the current domain has no movie ownership, so `ROLE_ADMIN` is clearer than an artificial voter.
+- **POST plus CSRF for deletion:** safe HTTP methods never mutate state, and every deletion requires a per-resource token.
+- **Uploads behind a service:** UUID filenames, storage errors, and cleanup policy are independently testable and do not clutter controllers.
+- **Infrastructure-light tests:** SQLite and a disabled Elasticsearch listener keep the default suite fast; the search adapter is tested behind its interface.
+- **Synchronous indexing retained:** the catalogue does not yet justify Messenger or eventual-consistency operational overhead. Async indexing is a documented future option if indexing volume grows.
 
-2. **Install dependencies**:
-   ```bash
-   composer install
-   ```
+## Requirements
 
-3. **Set up environment variables**:
-   Copy `.env` to `.env.local` and configure your database and other environment-specific settings:
-   ```bash
-   cp .env .env.local
-   ```
+- PHP 8.2+
+- Composer 2
+- Node.js 22.18+
+- Docker with Docker Compose v2
 
-4. **Configure Databases**:
-   - Set up MongoDB and MySQL connection strings in the `.env.local` file.
-   - Create MySQL database:
-     ```bash
-     php bin/console doctrine:database:create
-     php bin/console doctrine:migrations:migrate
-     ```
+## Quick start
 
-5. **Start Services**:
-   - Ensure MongoDB, MySQL, and Elasticsearch services are running.
-   - Run the Symfony server:
-     ```bash
-     symfony server:start
-     ```
-
-6. **Index Data with Elasticsearch**:
-   Run the command to index data into Elasticsearch:
-   ```bash
-   php bin/console app:index-movies
-   ```
-
-## Usage
-
-- Access the application in your browser at `http://localhost:8000`.
-- Use the web interface to manage movies and utilize the search functionality.
-
-## Testing
-
-To run the tests, execute:
 ```bash
-php bin/phpunit
+git clone https://github.com/ialaminpro/movies.git
+cd movies
+cp .env .env.local
+make setup
+symfony server:start
 ```
+
+`make setup` starts MySQL and Elasticsearch, installs backend/frontend dependencies, builds assets, runs migrations, loads fixtures, and builds the search index. Keep real credentials and `APP_SECRET` overrides in `.env.local`; that file is ignored by Git.
+
+Open `http://127.0.0.1:8000`.
+
+### Demo accounts
+
+| Role | Email | Password |
+|---|---|---|
+| Administrator | `admin@example.com` | `ChangeMe1234!` |
+| Viewer | `viewer@example.com` | `ChangeMe1234!` |
+
+These credentials are deterministic local demo data and must never be used in a deployed environment.
+
+## Manual setup
+
+```bash
+docker compose up -d --wait
+composer install
+npm ci
+npm run build
+php bin/console doctrine:migrations:migrate --no-interaction
+php bin/console doctrine:fixtures:load --no-interaction
+php bin/console fos:elastica:populate
+symfony server:start
+```
+
+Infrastructure endpoints:
+
+- MySQL: `127.0.0.1:3306`
+- Elasticsearch: `http://127.0.0.1:9200`
+
+## Development commands
+
+```bash
+make test       # PHPUnit
+make analyse    # PHPStan level 8
+make format     # Apply PHP CS Fixer
+make check      # Backend checks, npm audit, production asset build
+make fixtures   # Reload demo data and rebuild search
+make stop       # Stop infrastructure
+```
+
+The test suite is organized into `tests/Unit` and `tests/Functional`. Database-backed functional tests use an isolated SQLite schema; Elasticsearch behavior is replaced through `MovieSearch` except in the adapter unit tests.
+
+## CI
+
+GitHub Actions runs two focused jobs:
+
+- PHP: strict Composer validation, dependency audit, style, PHPStan level 8, PHPUnit, and Symfony container/Twig/YAML linting
+- Frontend: clean npm install, dependency audit, and production Webpack build
+
+Dependabot checks Composer, npm, and GitHub Actions weekly.
+
+## Project structure
+
+```text
+src/Controller/       HTTP orchestration
+src/Entity/           canonical Doctrine entities
+src/Repository/       persistence queries
+src/Search/           search contract, result DTO, Elasticsearch adapter
+src/Storage/          movie image storage
+src/Form/             forms and upload validation
+src/Security/         login authenticator
+tests/Unit/           isolated domain/infrastructure tests
+tests/Functional/     HTTP, security, forms, and CRUD tests
+migrations/           additive database history
+```
+
+## Security
+
+See [SECURITY.md](SECURITY.md). Do not commit production secrets; use environment variables, Symfony secrets, or an ignored `.env.local` file.
 
 ## Contributing
 
-Contributions are welcome! Please submit a Pull Request or open an issue to discuss potential improvements.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, quality checks, and pull-request expectations.
 
-## License
+## Roadmap
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Contact
-
-For any questions or inquiries, please reach out via [GitHub issues](https://github.com/ialaminpro/movies/issues).
+- Add a dedicated Elasticsearch integration job if search mappings become more complex.
+- Evaluate object storage when deployments require multiple application instances.
+- Consider asynchronous indexing only when measured indexing latency or volume justifies Messenger.
